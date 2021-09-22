@@ -1,9 +1,26 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
+import store from './utils/electronStore'
+
+let win = null
+let isLogin = store.get('isLogon')
+let loginWinOptions = {
+  width: 400,
+  height: 530,
+  resizable: false,
+  maximizable: false
+}
+let mainWinOptions = {
+  width: 1200,
+  height: 820,
+  resizable: true,
+  maximizable: true
+}
+let winOptions = isLogin ? mainWinOptions : loginWinOptions
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -12,9 +29,9 @@ protocol.registerSchemesAsPrivileged([
 
 async function createWindow() {
   // Create the browser window.
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+  win = new BrowserWindow({
+    ...winOptions,
+    title: '视频监控平台',
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
@@ -62,6 +79,15 @@ app.on('ready', async () => {
     }
   }
   createWindow()
+})
+
+// 监听渲染进程事件
+ipcMain.on('login', () => {
+  console.log('login')
+  win.setSize(mainWinOptions.width, mainWinOptions.height)
+  win.setMaximizable(true)
+  win.setResizable(true)
+  win.center()
 })
 
 // Exit cleanly on request from parent process in development mode.
